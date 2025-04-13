@@ -20,7 +20,7 @@
 - У всех файлов теперь присутствуют встроенные метаданные (например, эпизоды в видео, описание, заголовок и т.д.)
 - Отключил команды `/buy`, так как они не нужны
 - Команда `/stats` показывает одинаковую информацию для создателя и остальных пользователей
-
+- Вернул функцию поиска роликов
 
 [![docker image](https://github.com/tgbot-collection/ytdlbot/actions/workflows/builder.yaml/badge.svg)](https://github.com/tgbot-collection/ytdlbot/actions/workflows/builder.yaml)
 

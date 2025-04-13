@@ -52,6 +52,45 @@ from utils import extract_url_and_name, sizeof_fmt, timeof_fmt
 logging.info("Authorized users are %s", AUTHORIZED_USER)
 logging.getLogger("apscheduler.executors.default").propagate = False
 
+def search_ytb(kw: str):
+    num_results = 10
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': 'in_playlist',
+        'force_generic_extractor': True,
+    }
+
+    results = []
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        search_result = ydl.extract_info(f'ytsearch{num_results}:{kw}', download=False)
+
+    index=0
+    text = ""
+
+    if search_result and 'entries' in search_result:
+        for entry in search_result['entries']:
+            if not entry:
+                continue
+
+            # Получаем полную информацию о видео
+            with yt_dlp.YoutubeDL({'quiet': True}) as ydl_full:
+                try:
+                    video_info = ydl_full.extract_info(
+                        entry['url'],
+                        download=False
+                    )
+
+                    index += 1
+                    title = video_info.get('title', 'Нет названия')
+                    url = video_info.get('webpage_url', 'Нет ссылки')
+                    description = video_info.get('description', 'Нет описания')[:40] + '...'
+                    text += f"<b>{index}. {title}</b>\n{url}\n<i>{description}</i>\n\n"
+                except Exception as e:
+                    print(f'Ошибка при обработке видео: {e}')
+
+    return text
+
 
 def create_app(name: str, workers: int = 64) -> Client:
     return Client(
@@ -350,11 +389,17 @@ def download_handler(client: Client, message: types.Message):
     logging.info("start %s", url)
 
     try:
-        check_link(url)
-        # raise pyrogram.errors.exceptions.FloodWait(10)
-        bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...", quote=True)
-        client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
-        youtube_entrance(client, bot_msg, url)
+        if not re.findall(r"^https?://", url.lower()):
+            reply = message.reply_text("🔎 Ищу ролики на YouTube...", quote=True)
+            text = search_ytb(url)
+            client.edit_message_text(chat_id=reply.chat.id, message_id=reply.id, text=text, disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
+            return
+        else:
+            check_link(url)
+            # raise pyrogram.errors.exceptions.FloodWait(10)
+            bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...", quote=True)
+            client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
+            youtube_entrance(client, bot_msg, url)
     except pyrogram.errors.Flood as e:
         f = BytesIO()
         f.write(str(e).encode())
