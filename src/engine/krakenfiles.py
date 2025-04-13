@@ -63,10 +63,10 @@ def krakenfiles_download(client, bot_message, url: str):
             downloader.start()
 
         except ValueError as e:
-            bot_message.edit_text(f"❌ Произошла ошибка!\n{str(e)}")
+            bot_message.edit_text(f"❌ Произошла ошибка!\n\n{str(e)}")
         except Exception as e:
             bot_message.edit_text(
-                f"❌ Произошла ошибка!\nОшибка: {str(e)}\n"
+                f"❌ Произошла ошибка!\n\n{str(e)}\n\n"
                 "Проверьте валидность URL и попробуйте ещё раз."
             )
 

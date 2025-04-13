@@ -41,7 +41,7 @@ def pixeldrain_download(client, bot_message, url):
             bot_message.edit_text(f"❌ Произошла ошибка!\n\n`{e}`")
         except Exception as e:
             bot_message.edit_text(
-                f"❌ Произошла ошибка!\nТекущая ошибка: {str(e)}\n"
+                f"❌ Произошла ошибка!\n\n{str(e)}\n\n"
                 "Проверьте URL и попробуйте ещё раз."
             )
 
