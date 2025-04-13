@@ -187,6 +187,8 @@ class BaseDownloader(ABC):
         except Exception as e:
             logging.error("Error while getting metadata: %s", e)
 
+        thumb = None
+
         try:
             thumb = Path(video_path).parent.joinpath(f"{uuid.uuid4().hex}-thunmnail.jpg").as_posix()
             # ffmpeg -i video.mp4 -map 0:v -map -0:V -c copy cover.jpg
@@ -223,18 +225,18 @@ class BaseDownloader(ABC):
                 chat_id=self._chat_id,
                 files=files,
                 _type="document",
-                thumb=meta["thumb"],
+                thumb=meta.get("thumb", None),
                 force_document=True,
-                caption=meta["caption"],
+                caption=meta.get("caption", None),
             )
         elif self._format == "audio":
             logging.info("Sending as audio for %s", self._url)
             success = self.send_something(
                 chat_id=self._chat_id,
                 files=files,
-                thumb=meta["thumb"],
+                thumb=meta.get("thumb", None),
                 _type="audio",
-                caption=meta["caption"],
+                caption=meta.get("caption", None),
             )
         elif self._format == "video":
             logging.info("Sending as video for %s", self._url)
