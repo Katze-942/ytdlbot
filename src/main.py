@@ -101,7 +101,7 @@ def start_handler(client: Client, message: types.Message):
     free, paid = get_free_quota(from_id), get_paid_quota(from_id)
     client.send_message(
         from_id,
-        BotText.start + f"You have {free} free and {paid} paid quota.",
+        BotText.start, # + f"You have {free} free and {paid} paid quota.",
         disable_web_page_preview=True,
     )
 
@@ -130,7 +130,7 @@ def ping_handler(client: Client, message: types.Message):
 
     def send_message_and_measure_ping():
         start_time = int(round(time.time() * 1000))
-        reply: types.Message | typing.Any = client.send_message(chat_id, "Starting Ping...")
+        reply: types.Message | typing.Any = client.send_message(chat_id, "Пинг...")
 
         end_time = int(round(time.time() * 1000))
         ping_time = int(round(end_time - start_time))
@@ -138,7 +138,7 @@ def ping_handler(client: Client, message: types.Message):
         if message_sent:
             message.reply_text(f"Ping: {ping_time:.2f} ms", quote=True)
         time.sleep(0.5)
-        client.edit_message_text(chat_id=reply.chat.id, message_id=reply.id, text="Ping Calculation Complete.")
+        client.edit_message_text(chat_id=reply.chat.id, message_id=reply.id, text="Понг!")
         time.sleep(1)
         client.delete_messages(chat_id=reply.chat.id, message_ids=reply.id)
 
@@ -146,61 +146,61 @@ def ping_handler(client: Client, message: types.Message):
     thread.start()
 
 
-@app.on_message(filters.command(["buy"]))
-def buy(client: Client, message: types.Message):
-    markup = types.InlineKeyboardMarkup(
-        [
-            [  # First row
-                types.InlineKeyboardButton("10-$1", callback_data="buy-10-1"),
-                types.InlineKeyboardButton("20-$2", callback_data="buy-20-2"),
-                types.InlineKeyboardButton("40-$3.5", callback_data="buy-40-3.5"),
-            ],
-            [  # second row
-                types.InlineKeyboardButton("50-$4", callback_data="buy-50-4"),
-                types.InlineKeyboardButton("75-$6", callback_data="buy-75-6"),
-                types.InlineKeyboardButton("100-$8", callback_data="buy-100-8"),
-            ],
-        ]
-    )
-    message.reply_text("Please choose the amount you want to buy.", reply_markup=markup)
-
-
-@app.on_callback_query(filters.regex(r"buy.*"))
-def send_invoice(client: Client, callback_query: types.CallbackQuery):
-    chat_id = callback_query.message.chat.id
-    data = callback_query.data
-    _, count, price = data.split("-")
-    price = int(float(price) * 100)
-    client.send_invoice(
-        chat_id,
-        f"{count} permanent download quota",
-        "Please make a payment via Stripe",
-        f"{count}",
-        "USD",
-        [types.LabeledPrice(label="VIP", amount=price)],
-        provider_token=os.getenv("PROVIDER_TOKEN"),
-        protect_content=True,
-        start_parameter="no-forward-placeholder",
-    )
-
-
-@app.on_pre_checkout_query()
-def pre_checkout(client: Client, query: types.PreCheckoutQuery):
-    client.answer_pre_checkout_query(query.id, ok=True)
-
-
-@app.on_message(filters.successful_payment)
-def successful_payment(client: Client, message: types.Message):
-    who = message.chat.id
-    amount = message.successful_payment.total_amount  # in cents
-    quota = int(message.successful_payment.invoice_payload)
-    ch = message.successful_payment.provider_payment_charge_id
-    free, paid = credit_account(who, amount, quota, ch)
-    if paid > 0:
-        message.reply_text(f"Payment successful! You now have {free} free and {paid} paid quota.")
-    else:
-        message.reply_text("Something went wrong. Please contact the admin.")
-    message.delete()
+# @app.on_message(filters.command(["buy"]))
+# def buy(client: Client, message: types.Message):
+#     markup = types.InlineKeyboardMarkup(
+#         [
+#             [  # First row
+#                 types.InlineKeyboardButton("10-$1", callback_data="buy-10-1"),
+#                 types.InlineKeyboardButton("20-$2", callback_data="buy-20-2"),
+#                 types.InlineKeyboardButton("40-$3.5", callback_data="buy-40-3.5"),
+#             ],
+#             [  # second row
+#                 types.InlineKeyboardButton("50-$4", callback_data="buy-50-4"),
+#                 types.InlineKeyboardButton("75-$6", callback_data="buy-75-6"),
+#                 types.InlineKeyboardButton("100-$8", callback_data="buy-100-8"),
+#             ],
+#         ]
+#     )
+#     message.reply_text("Please choose the amount you want to buy.", reply_markup=markup)
+#
+#
+# @app.on_callback_query(filters.regex(r"buy.*"))
+# def send_invoice(client: Client, callback_query: types.CallbackQuery):
+#     chat_id = callback_query.message.chat.id
+#     data = callback_query.data
+#     _, count, price = data.split("-")
+#     price = int(float(price) * 100)
+#     client.send_invoice(
+#         chat_id,
+#         f"{count} permanent download quota",
+#         "Please make a payment via Stripe",
+#         f"{count}",
+#         "USD",
+#         [types.LabeledPrice(label="VIP", amount=price)],
+#         provider_token=os.getenv("PROVIDER_TOKEN"),
+#         protect_content=True,
+#         start_parameter="no-forward-placeholder",
+#     )
+#
+#
+# @app.on_pre_checkout_query()
+# def pre_checkout(client: Client, query: types.PreCheckoutQuery):
+#     client.answer_pre_checkout_query(query.id, ok=True)
+# #
+#
+# @app.on_message(filters.successful_payment)
+# def successful_payment(client: Client, message: types.Message):
+#     who = message.chat.id
+#     amount = message.successful_payment.total_amount  # in cents
+#     quota = int(message.successful_payment.invoice_payload)
+#     ch = message.successful_payment.provider_payment_charge_id
+#     free, paid = credit_account(who, amount, quota, ch)
+#     if paid > 0:
+#         message.reply_text(f"Payment successful! You now have {free} free and {paid} paid quota.")
+#     else:
+#         message.reply_text("Something went wrong. Please contact the admin.")
+#     message.delete()
 
 
 @app.on_message(filters.command(["stats"]))
@@ -215,37 +215,41 @@ def stats_handler(client: Client, message: types.Message):
     boot_time = psutil.boot_time()
 
     owner_stats = (
-        "\n\n⌬─────「 Stats 」─────⌬\n\n"
-        f"<b>╭🖥️ **CPU Usage »**</b>  __{cpu_usage}%__\n"
-        f"<b>├💾 **RAM Usage »**</b>  __{memory.percent}%__\n"
-        f"<b>╰🗃️ **DISK Usage »**</b>  __{disk}%__\n\n"
-        f"<b>╭📤Upload:</b> {sizeof_fmt(psutil.net_io_counters().bytes_sent)}\n"
-        f"<b>╰📥Download:</b> {sizeof_fmt(psutil.net_io_counters().bytes_recv)}\n\n\n"
-        f"<b>Memory Total:</b> {sizeof_fmt(memory.total)}\n"
-        f"<b>Memory Free:</b> {sizeof_fmt(memory.available)}\n"
-        f"<b>Memory Used:</b> {sizeof_fmt(memory.used)}\n"
-        f"<b>SWAP Total:</b> {sizeof_fmt(swap.total)} | <b>SWAP Usage:</b> {swap.percent}%\n\n"
-        f"<b>Total Disk Space:</b> {sizeof_fmt(total)}\n"
-        f"<b>Used:</b> {sizeof_fmt(used)} | <b>Free:</b> {sizeof_fmt(free)}\n\n"
-        f"<b>Physical Cores:</b> {psutil.cpu_count(logical=False)}\n"
-        f"<b>Total Cores:</b> {psutil.cpu_count(logical=True)}\n\n"
-        f"<b>🤖Bot Uptime:</b> {timeof_fmt(time.time() - botStartTime)}\n"
-        f"<b>⏲️OS Uptime:</b> {timeof_fmt(time.time() - boot_time)}\n"
+        "\n\n⌬─────「 Статистика 」─────⌬\n\n"
+        f"<b>╭🖥️ **Использование ЦП »**</b>  __{cpu_usage}%__\n"
+        f"<b>├💾 **RAM »**</b>  __{memory.percent}%__\n"
+        f"<b>╰🗃️ **Использование диска »**</b>  __{disk}%__\n\n"
+        f"<b>╭📤Выгрузка:</b> {sizeof_fmt(psutil.net_io_counters().bytes_sent)}\n"
+        f"<b>╰📥Загрузка:</b> {sizeof_fmt(psutil.net_io_counters().bytes_recv)}\n\n\n"
+        f"<b>Общая память:</b> {sizeof_fmt(memory.total)}\n"
+        f"<b>Свободная память:</b> {sizeof_fmt(memory.available)}\n"
+        f"<b>Используемая память:</b> {sizeof_fmt(memory.used)}\n"
+        f"<b>Размер подкачки:</b> {sizeof_fmt(swap.total)} | <b>Используемая подкачка:</b> {swap.percent}%\n\n"
+        f"<b>Физическая память:</b> {sizeof_fmt(total)}\n"
+        f"<b>Используется:</b> {sizeof_fmt(used)} | <b>Свободно:</b> {sizeof_fmt(free)}\n\n"
+        f"<b>Количество физических ЦП ядер:</b> {psutil.cpu_count(logical=False)}\n"
+        f"<b>Общее количество ЦП ядер:</b> {psutil.cpu_count(logical=True)}\n\n"
+        f"<b>🤖Время работы бота:</b> {timeof_fmt(time.time() - botStartTime)}\n"
+        f"<b>⏲️Время работы системы:</b> {timeof_fmt(time.time() - boot_time)}\n"
     )
 
     user_stats = (
-        "\n\n⌬─────「 Stats 」─────⌬\n\n"
-        f"<b>╭🖥️ **CPU Usage »**</b>  __{cpu_usage}%__\n"
-        f"<b>├💾 **RAM Usage »**</b>  __{memory.percent}%__\n"
-        f"<b>╰🗃️ **DISK Usage »**</b>  __{disk}%__\n\n"
-        f"<b>╭📤Upload:</b> {sizeof_fmt(psutil.net_io_counters().bytes_sent)}\n"
-        f"<b>╰📥Download:</b> {sizeof_fmt(psutil.net_io_counters().bytes_recv)}\n\n\n"
-        f"<b>Memory Total:</b> {sizeof_fmt(memory.total)}\n"
-        f"<b>Memory Free:</b> {sizeof_fmt(memory.available)}\n"
-        f"<b>Memory Used:</b> {sizeof_fmt(memory.used)}\n"
-        f"<b>Total Disk Space:</b> {sizeof_fmt(total)}\n"
-        f"<b>Used:</b> {sizeof_fmt(used)} | <b>Free:</b> {sizeof_fmt(free)}\n\n"
-        f"<b>🤖Bot Uptime:</b> {timeof_fmt(time.time() - botStartTime)}\n"
+        "\n\n⌬─────「 Статистика 」─────⌬\n\n"
+        f"<b>╭🖥️ **Использование ЦП »**</b>  __{cpu_usage}%__\n"
+        f"<b>├💾 **RAM »**</b>  __{memory.percent}%__\n"
+        f"<b>╰🗃️ **Использование диска »**</b>  __{disk}%__\n\n"
+        f"<b>╭📤Выгрузка:</b> {sizeof_fmt(psutil.net_io_counters().bytes_sent)}\n"
+        f"<b>╰📥Загрузка:</b> {sizeof_fmt(psutil.net_io_counters().bytes_recv)}\n\n\n"
+        f"<b>Общая память:</b> {sizeof_fmt(memory.total)}\n"
+        f"<b>Свободная память:</b> {sizeof_fmt(memory.available)}\n"
+        f"<b>Используемая память:</b> {sizeof_fmt(memory.used)}\n"
+        f"<b>Размер подкачки:</b> {sizeof_fmt(swap.total)} | <b>Используемая подкачка:</b> {swap.percent}%\n\n"
+        f"<b>Физическая память:</b> {sizeof_fmt(total)}\n"
+        f"<b>Используется:</b> {sizeof_fmt(used)} | <b>Свободно:</b> {sizeof_fmt(free)}\n\n"
+        f"<b>Количество физических ЦП ядер:</b> {psutil.cpu_count(logical=False)}\n"
+        f"<b>Общее количество ЦП ядер:</b> {psutil.cpu_count(logical=True)}\n\n"
+        f"<b>🤖Время работы бота:</b> {timeof_fmt(time.time() - botStartTime)}\n"
+        f"<b>⏲️Время работы системы:</b> {timeof_fmt(time.time() - boot_time)}\n"
     )
 
     if message.from_user.id in OWNER:
@@ -262,14 +266,14 @@ def settings_handler(client: Client, message: types.Message):
     markup = types.InlineKeyboardMarkup(
         [
             [  # First row
-                types.InlineKeyboardButton("send as document", callback_data="document"),
-                types.InlineKeyboardButton("send as video", callback_data="video"),
-                types.InlineKeyboardButton("send as audio", callback_data="audio"),
+                types.InlineKeyboardButton("Отправлять файл", callback_data="document"),
+                types.InlineKeyboardButton("Отправлять видео", callback_data="video"),
+                types.InlineKeyboardButton("Отправлять аудио", callback_data="audio"),
             ],
             [  # second row
-                types.InlineKeyboardButton("High Quality", callback_data="high"),
-                types.InlineKeyboardButton("Medium Quality", callback_data="medium"),
-                types.InlineKeyboardButton("Low Quality", callback_data="low"),
+                types.InlineKeyboardButton("Высокое качество", callback_data="high"),
+                types.InlineKeyboardButton("Среднее качество", callback_data="medium"),
+                types.InlineKeyboardButton("Низкое качество", callback_data="low"),
             ],
         ]
     )
@@ -288,9 +292,9 @@ def direct_download(client: Client, message: types.Message):
     url, new_name = extract_url_and_name(message_text)
     logging.info("Direct download using aria2/requests start %s", url)
     if url is None or not re.findall(r"^https?://", url.lower()):
-        message.reply_text("Send me a correct LINK.", quote=True)
+        message.reply_text("Укажи корректную ссылку!", quote=True)
         return
-    bot_msg = message.reply_text("Direct download request received.", quote=True)
+    bot_msg = message.reply_text("Запрос принят, обрабатываю...", quote=True)
     direct_entrance(client, bot_msg, url)
 
 
@@ -303,9 +307,9 @@ def spdl_handler(client: Client, message: types.Message):
     url, new_name = extract_url_and_name(message_text)
     logging.info("spdl start %s", url)
     if url is None or not re.findall(r"^https?://", url.lower()):
-        message.reply_text("Something wrong 🤔.\nCheck your URL and send me again.", quote=True)
+        message.reply_text("Произошла какая-то ошибка, проверьте URL.", quote=True)
         return
-    bot_msg = message.reply_text("SPDL request received.", quote=True)
+    bot_msg = message.reply_text("Запрос принят, обрабатываю....", quote=True)
     special_download_entrance(client, bot_msg, url)
 
 
@@ -330,7 +334,7 @@ def check_link(url: str):
     ytdl = yt_dlp.YoutubeDL()
     if re.findall(r"^https://www\.youtube\.com/channel/", url) or "list" in url:
         # TODO maybe using ytdl.extract_info
-        raise ValueError("Playlist or channel download are not supported at this moment.")
+        raise ValueError("📛 Загрузка плейлистов отключена!")
 
     if not M3U8_SUPPORT and (re.findall(r"m3u8|\.m3u8|\.m3u$", url.lower())):
         return "m3u8 links are disabled."
@@ -348,7 +352,7 @@ def download_handler(client: Client, message: types.Message):
     try:
         check_link(url)
         # raise pyrogram.errors.exceptions.FloodWait(10)
-        bot_msg: types.Message | Any = message.reply_text("Task received.", quote=True)
+        bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...", quote=True)
         client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
         youtube_entrance(client, bot_msg, url)
     except pyrogram.errors.Flood as e:
@@ -356,15 +360,15 @@ def download_handler(client: Client, message: types.Message):
         f.write(str(e).encode())
         f.write(b"Your job will be done soon. Just wait!")
         f.name = "Please wait.txt"
-        message.reply_document(f, caption=f"Flood wait! Please wait {e} seconds...", quote=True)
+        message.reply_document(f, caption=f"Пожалуйста, подожди {e} секунд...", quote=True)
         f.close()
-        client.send_message(OWNER, f"Flood wait! 🙁 {e} seconds....")
+        client.send_message(OWNER, f"Пожалуйста, подожди {e} секунд...")
         time.sleep(e.value)
     except ValueError as e:
         message.reply_text(e.__str__(), quote=True)
     except Exception as e:
         logging.error("Download failed", exc_info=True)
-        message.reply_text(f"❌ Download failed: {e}", quote=True)
+        message.reply_text(f"❌ Произошла ошибка!: {e}", quote=True)
 
 
 @app.on_callback_query(filters.regex(r"document|video|audio"))
@@ -372,7 +376,7 @@ def format_callback(client: Client, callback_query: types.CallbackQuery):
     chat_id = callback_query.message.chat.id
     data = callback_query.data
     logging.info("Setting %s file type to %s", chat_id, data)
-    callback_query.answer(f"Your send type was set to {callback_query.data}")
+    callback_query.answer(f"Вы установили тип отправки: {callback_query.data}")
     set_user_settings(chat_id, "format", data)
 
 
@@ -381,7 +385,7 @@ def quality_callback(client: Client, callback_query: types.CallbackQuery):
     chat_id = callback_query.message.chat.id
     data = callback_query.data
     logging.info("Setting %s download quality to %s", chat_id, data)
-    callback_query.answer(f"Your default engine quality was set to {callback_query.data}")
+    callback_query.answer(f"Вы установили качество видео: {callback_query.data}")
     set_user_settings(chat_id, "quality", data)
 
 
@@ -396,7 +400,7 @@ if __name__ == "__main__":
  ▌  ▌ ▌ ▌ ▌  ▌  ▌ ▌ ▌ ▌ ▛▀  ▌ ▌ ▌ ▌ ▐▐▐  ▌ ▌ ▐  ▌ ▌ ▞▀▌ ▌ ▌
  ▘  ▝▀  ▝▀▘  ▘  ▝▀▘ ▀▀  ▝▀▘ ▀▀  ▝▀   ▘▘  ▘ ▘  ▘ ▝▀  ▝▀▘ ▝▀▘
 
-By @BennyThink, VIP Mode: {ENABLE_VIP} 
+By @BennyThink, VIP Mode: {ENABLE_VIP}
     """
     print(banner)
     app.run()

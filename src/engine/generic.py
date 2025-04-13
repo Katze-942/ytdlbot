@@ -17,7 +17,7 @@ from engine.base import BaseDownloader
 
 def match_filter(info_dict):
     if info_dict.get("is_live"):
-        raise NotImplementedError("Skipping live video")
+        raise NotImplementedError("⏏️ Я не могу загружать трансляции. Пожалуйста, дождитесь окончания стрима")
     return None  # Allow download for non-live videos
 
 
@@ -25,13 +25,26 @@ class YoutubeDownload(BaseDownloader):
     @staticmethod
     def get_format(m):
         return [
-            f"bestvideo[ext=mp4][height={m}]+bestaudio[ext=m4a]",
-            f"bestvideo[vcodec^=avc][height={m}]+bestaudio[acodec^=mp4a]/best[vcodec^=avc]/best",
+            # Видео, которые по длине не больше двух часов в основном
+            f"bestvideo[vcodec^=vp][height<={m}][filesize<1.5G]+(bestaudio[language=ru][filesize<0.5G]/bestaudio[filesize<0.5G])",
+            f"bestvideo[height<={m}][filesize<1.5G]+(bestaudio[language=ru][filesize<0.5G]/bestaudio[filesize<0.5G])",
+
+            # Очень длинные видео
+            f"bestvideo[vcodec^=vp][height<={m}][filesize<1G]+(bestaudio[language=ru][filesize<1G]/bestaudio[filesize<1G])",
+            f"bestvideo[height<={m}][filesize<1G]+(bestaudio[language=ru][filesize<1G]/bestaudio[filesize<1G])",
+
+            # Видео, у которых нет чётких размеров
+            f"(bestvideo[height<={m}]/bestvideo)+(bestaudio[language=ru]/bestaudio)",
+
+            # Просто видео или просто аудио
+            f"(bestvideo[height<={m}]/bestvideo)/(bestaudio[language=ru]/bestaudio)",
+
+            "best"
         ]
 
     def _setup_formats(self) -> list | None:
-        if not is_youtube(self._url):
-            return [None]
+        # if not is_youtube(self._url):
+        #     return [None]
 
         quality, format_ = get_quality_settings(self._chat_id), get_format_settings(self._chat_id)
         # quality: high, medium, low, custom
@@ -44,14 +57,15 @@ class YoutubeDownload(BaseDownloader):
             None,
         ]
         audio = AUDIO_FORMAT or "m4a"
+        audioformats = [f"bestaudio[ext={audio}][language=ru]/bestaudio[ext={audio}]", "bestaudio[ext=m4a][language=ru]/bestaudio[ext=m4a]", "bestaudio[language=ru]/bestaudio", "best"]
         maps = {
-            "high-audio": [f"bestaudio[ext={audio}]"],
-            "high-video": defaults,
-            "high-document": defaults,
-            "medium-audio": [f"bestaudio[ext={audio}]"],  # no mediumaudio :-(
+            "high-audio": audioformats,
+            "high-video": self.get_format(1080),
+            "high-document": self.get_format(1080),
+            "medium-audio": audioformats,  # no mediumaudio :-(
             "medium-video": self.get_format(720),
             "medium-document": self.get_format(720),
-            "low-audio": [f"bestaudio[ext={audio}]"],
+            "low-audio": audioformats,
             "low-video": self.get_format(480),
             "low-document": self.get_format(480),
             "custom-audio": "",
@@ -82,20 +96,52 @@ class YoutubeDownload(BaseDownloader):
             # return None
 
         formats.extend(maps[f"{quality}-{format_}"])
-        # extend default formats if not high*
-        if quality != "high":
-            formats.extend(defaults)
         return formats
 
     def _download(self, formats) -> list:
         output = Path(self._tempdir.name, "%(title).70s.%(ext)s").as_posix()
         ydl_opts = {
+            "verbose": True,
             "progress_hooks": [lambda d: self.download_hook(d)],
             "outtmpl": output,
             "restrictfilenames": False,
             "quiet": True,
             "match_filter": match_filter,
+            "embedthumbnail": True,
+            "writethumbnail": True,
+            "cookies": "firefox",
+            "format": '/'.join(formats)
         }
+
+        if self._url.startswith("https://drive.google.com"):
+            formats = ["source"] + formats
+
+        if get_format_settings(self._chat_id) == "audio":
+            ydl_opts["postprocessors"] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '0'
+            },
+            {
+                'key': 'FFmpegMetadata',
+                'add_metadata': True
+            },
+            {
+                'key': 'EmbedThumbnail',
+                'already_have_thumbnail': False
+            }]
+        else:
+            if get_format_settings(self._chat_id) == "video":
+                ydl_opts["merge_output_format"] = "mp4"
+
+            ydl_opts["postprocessors"] = [{
+                'key': 'FFmpegMetadata',
+                'add_metadata': True
+            },
+            {
+                'key': 'EmbedThumbnail'
+            }]
+
         # setup cookies for youtube only
         if is_youtube(self._url):
             # use cookies from browser firstly
@@ -111,19 +157,11 @@ class YoutubeDownload(BaseDownloader):
                 #     "youtube": [f"po_token=web.player+{potoken}", f"po_token=web.gvs+{potoken}"]
                 # }
 
-        if self._url.startswith("https://drive.google.com"):
-            # Always use the `source` format for Google Drive URLs.
-            formats = ["source"] + formats
-
         files = None
-        for f in formats:
-            ydl_opts["format"] = f
-            logging.info("yt-dlp options: %s", ydl_opts)
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([self._url])
-            files = list(Path(self._tempdir.name).glob("*"))
-            break
-
+        logging.info("yt-dlp options: %s", ydl_opts)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([self._url])
+        files = list(Path(self._tempdir.name).glob("*"))
         return files
 
     def _start(self, formats=None):

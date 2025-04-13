@@ -9,6 +9,8 @@ import logging
 import re
 import tempfile
 import uuid
+import subprocess
+
 from abc import ABC, abstractmethod
 from io import StringIO
 from pathlib import Path
@@ -104,12 +106,12 @@ class BaseDownloader(ABC):
         progress = f"`[{tqdm_output[1]}]`"
         detail = tqdm_output[2].replace("[A", "")
         text = f"""
-    {desc}
+{desc}
 
-    {progress}
-    {detail}
-    {more("Speed:", speed)}
-    {more("ETA:", eta)}
+🔌 {progress}
+🔌 {detail}
+{"" if len(speed) == 0 else "⚡️"} {more("Скорость:", speed)}
+{"" if len(eta) == 0 else "⏳"} {more("Осталось:", eta)}
         """
         f.close()
         return text
@@ -120,17 +122,17 @@ class BaseDownloader(ABC):
             total = d.get("total_bytes") or d.get("total_bytes_estimate", 0)
 
             if total > TG_NORMAL_MAX_SIZE:
-                msg = f"Your download file size {sizeof_fmt(total)} is too large for Telegram."
+                msg = f"Это видео весит {sizeof_fmt(total)}, я не могу..."
                 raise Exception(msg)
 
             # percent = remove_bash_color(d.get("_percent_str", "N/A"))
             speed = self.__remove_bash_color(d.get("_speed_str", "N/A"))
             eta = self.__remove_bash_color(d.get("_eta_str", d.get("eta")))
-            text = self.__tqdm_progress("Downloading...", total, downloaded, speed, eta)
+            text = self.__tqdm_progress("▶️ Загружаю...", total, downloaded, speed, eta)
             self.edit_text(text)
 
     def upload_hook(self, current, total):
-        text = self.__tqdm_progress("Uploading...", total, current)
+        text = self.__tqdm_progress("📤 Выгружаю...", total, current)
         self.edit_text(text)
 
     @debounce(5)
@@ -179,29 +181,38 @@ class BaseDownloader(ABC):
         width = height = duration = 0
         try:
             video_streams = ffmpeg.probe(video_path, select_streams="v")
-            for item in video_streams.get("streams", []):
-                height = item["height"]
-                width = item["width"]
+            width = video_streams.get("streams", [])[0].get('width')
+            height = video_streams.get("streams", [])[0].get('height')
             duration = int(float(video_streams["format"]["duration"]))
         except Exception as e:
             logging.error("Error while getting metadata: %s", e)
+
         try:
-            thumb = Path(video_path).parent.joinpath(f"{uuid.uuid4().hex}-thunmnail.png").as_posix()
-            # A thumbnail's width and height should not exceed 320 pixels.
-            ffmpeg.input(video_path, ss=duration / 2).filter(
-                "scale",
-                "if(gt(iw,ih),300,-1)",  # If width > height, scale width to 320 and height auto
-                "if(gt(iw,ih),-1,300)",
-            ).output(thumb, vframes=1).run()
-        except ffmpeg._run.Error:
+            thumb = Path(video_path).parent.joinpath(f"{uuid.uuid4().hex}-thunmnail.jpg").as_posix()
+            # ffmpeg -i video.mp4 -map 0:v -map -0:V -c copy cover.jpg
+            subprocess.run(["ffmpeg", "-y", "-i", video_path, "-map", "0:v", "-map", "-0:V", "-c", "copy", thumb], check=True, text=True)
+        except Exception:
             thumb = None
 
-        caption = f"{self._url}\n{filename}\n\nResolution: {width}x{height}\nDuration: {duration} seconds"
+        caption = f"{self._url}\n{filename}\n\nРазрешение: {width}x{height}\nПродолжительность: {duration} секунд"
         return dict(height=height, width=width, duration=duration, thumb=thumb, caption=caption)
+
+    # def video_convert_to_mp4(self, files):
+    #     mp4_files = [file for file in files if file.suffix != ".mp4"]
+    #
+    #     if len(mp4_files) > 0:
+    #         self._bot_msg.edit_text("🦆 Перекодировка видео, чтобы вы смогли смотреть его в Telegram. Процесс может идти до 5 минут...")
+    #
+    #     for file in mp4_files:
+    #         path = str(file.resolve())
+    #         new_path = str(file.parent) + "/" + str(file.stem) + ".mp4"
+    #         ffmpeg.input(path).output(new_path, codec="copy", movflags="+faststart").overwrite_output().run()
+    #         file.unlink()
 
     def _upload(self, files=None, meta=None):
         if files is None:
             files = list(Path(self._tempdir.name).glob("*"))
+
         if meta is None:
             meta = self.get_metadata()
 
@@ -221,6 +232,7 @@ class BaseDownloader(ABC):
             success = self.send_something(
                 chat_id=self._chat_id,
                 files=files,
+                thumb=meta["thumb"],
                 _type="audio",
                 caption=meta["caption"],
             )
@@ -246,7 +258,7 @@ class BaseDownloader(ABC):
 
         self._redis.add_cache(video_key, mapping)
         # change progress bar to done
-        self._bot_msg.edit_text("✅ Success")
+        self._bot_msg.edit_text("✅ Всё готово!")
         return success
 
     def _get_video_cache(self):

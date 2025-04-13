@@ -46,7 +46,7 @@ class InstagramDownload(BaseDownloader):
         try:
             resp = requests.get(f"http://instagram:15000/?url={self._url}").json()
         except Exception as e:
-            self._bot_msg.edit_text(f"Download failed!❌\n\n`{e}`")
+            self._bot_msg.edit_text(f"❌ Произошла ошибка!\n\n`{e}`")
             pass
 
         code = self.extract_code()
@@ -115,7 +115,7 @@ class InstagramDownload(BaseDownloader):
                     counter += 1
 
                 except Exception as e:
-                    self._bot_msg.edit_text(f"Download failed!❌\n\n`{e}`")
+                    self._bot_msg.edit_text(f"❌ Произошла ошибка!\n\n`{e}`")
                     return []
 
         return video_paths

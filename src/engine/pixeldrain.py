@@ -38,11 +38,11 @@ def pixeldrain_download(client, bot_message, url):
             ddl.start()
 
         except ValueError as e:
-            bot_message.edit_text(f"Download failed!❌\n\n`{e}`")
+            bot_message.edit_text(f"❌ Произошла ошибка!\n\n`{e}`")
         except Exception as e:
             bot_message.edit_text(
-                f"Download failed!❌\nAn error occurred: {str(e)}\n"
-                "Please check your URL and try again."
+                f"❌ Произошла ошибка!\nТекущая ошибка: {str(e)}\n"
+                "Проверьте URL и попробуйте ещё раз."
             )
 
     _download(url)

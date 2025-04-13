@@ -95,21 +95,21 @@ class DirectDownload(BaseDownloader):
                 progress = self.__parse_progress(line)
                 if progress:
                     self.download_hook(progress)
-                elif "Download complete:" in line:
+                elif "✅ Загрузка завершена!" in line:
                     self.download_hook({"status": "complete"})
 
             self._process.wait(timeout=300)
             success = self._process.wait() == 0
             if not success:
                 raise subprocess.CalledProcessError(
-                    self._process.returncode, 
-                    command, 
+                    self._process.returncode,
+                    command,
                     self._process.stderr.read()
                 )
             if self._process.returncode != 0:
                 raise subprocess.CalledProcessError(
                     self._process.returncode, 
-                    command, 
+                    command,
                     stderr
                 )
 
@@ -130,12 +130,12 @@ class DirectDownload(BaseDownloader):
             return [file.as_posix()]
 
         except subprocess.TimeoutExpired:
-            error_msg = "Download timed out after 5 minutes."
+            error_msg = "Время ожидания загрузки превысило 5 минут..."
             logging.error(error_msg)
-            self._bot_msg.edit_text(f"Download failed!❌\n\n{error_msg}")
+            self._bot_msg.edit_text(f"❌ Произошла ошибка!\n\n{error_msg}")
             return []
         except Exception as e:
-            self._bot_msg.edit_text(f"Download failed!❌\n\n`{e}`")
+            self._bot_msg.edit_text(f"❌ Произошла ошибка!\n\n`{e}`")
             return []
         finally:
             if self._process:

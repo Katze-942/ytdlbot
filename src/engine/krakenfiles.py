@@ -58,16 +58,16 @@ def krakenfiles_download(client, bot_message, url: str):
             form_data = _extract_form_data(url)
             download_url = _get_download_url(form_data)
 
-            bot_message.edit_text("Starting download...")
+            bot_message.edit_text("▶️ Начинаю загрузку...")
             downloader = DirectDownload(client, bot_message, download_url)
             downloader.start()
 
         except ValueError as e:
-            bot_message.edit_text(f"Download failed!❌\n{str(e)}")
+            bot_message.edit_text(f"❌ Произошла ошибка!\n{str(e)}")
         except Exception as e:
             bot_message.edit_text(
-                f"Download failed!❌\nAn error occurred: {str(e)}\n"
-                "Please check your URL and try again."
+                f"❌ Произошла ошибка!\nОшибка: {str(e)}\n"
+                "Проверьте валидность URL и попробуйте ещё раз."
             )
 
     _download(url)

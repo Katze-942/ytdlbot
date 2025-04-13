@@ -73,8 +73,7 @@ def get_caption(url, video_path):
         meta = dict(
             width=getattr(video_path, "width", 0),
             height=getattr(video_path, "height", 0),
-            duration=getattr(video_path, "duration", 0),
-            thumb=getattr(video_path, "thumb", None),
+            duration=getattr(video_path, "duration", 0)
         )
 
     # Shorten the URL if necessary
