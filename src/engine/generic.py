@@ -110,7 +110,8 @@ class YoutubeDownload(BaseDownloader):
             "embedthumbnail": True,
             "writethumbnail": True,
             "cookies": "firefox",
-            "format": '/'.join(formats)
+            "format": '/'.join(formats),
+            "source_address": "0.0.0.0"
         }
 
         if self._url.startswith("https://drive.google.com"):

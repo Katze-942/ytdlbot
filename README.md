@@ -21,6 +21,7 @@
 - Отключил команды `/buy`, так как они не нужны
 - Команда `/stats` показывает одинаковую информацию для создателя и остальных пользователей
 - Вернул функцию поиска роликов
+- Принудительно использую IPv4. Помогло в ситуации, когда ролики перестали грузится.
 
 [![docker image](https://github.com/katze-942/ytdlbot/actions/workflows/builder.yaml/badge.svg)](https://github.com/katze-942/ytdlbot/actions/workflows/builder.yaml)
 
