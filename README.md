@@ -22,7 +22,7 @@
 - Команда `/stats` показывает одинаковую информацию для создателя и остальных пользователей
 - Вернул функцию поиска роликов
 
-[![docker image](https://github.com/tgbot-collection/ytdlbot/actions/workflows/builder.yaml/badge.svg)](https://github.com/tgbot-collection/ytdlbot/actions/workflows/builder.yaml)
+[![docker image](https://github.com/katze-942/ytdlbot/actions/workflows/builder.yaml/badge.svg)](https://github.com/katze-942/ytdlbot/actions/workflows/builder.yaml)
 
 **YouTube Download Bot🚀🎬⬇️**
 
@@ -135,6 +135,7 @@ This bot can be deployed on any platform that supports Python.
 One line command to run the bot
 
 ```shell
+# Или katze-942/ytdlbot, если вы хотите использовать мою версию
 docker run --env-file .env bennythink/ytdlbot
 ```
 
