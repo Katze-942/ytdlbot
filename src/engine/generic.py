@@ -11,7 +11,7 @@ import yt_dlp
 
 from config import AUDIO_FORMAT
 from utils import is_youtube
-from database.model import get_format_settings, get_quality_settings
+from database.model import get_format_settings, get_quality_settings, get_vcodec_settings
 from engine.base import BaseDownloader
 
 
@@ -23,79 +23,51 @@ def match_filter(info_dict):
 
 class YoutubeDownload(BaseDownloader):
     @staticmethod
-    def get_format(m):
+    def get_format(height, vcodec):
         return [
             # Видео, которые по длине не больше двух часов в основном
-            f"bestvideo[vcodec^=vp][height<={m}][filesize<1.5G]+(bestaudio[language=ru][filesize<0.5G]/bestaudio[filesize<0.5G])",
-            f"bestvideo[height<={m}][filesize<1.5G]+(bestaudio[language=ru][filesize<0.5G]/bestaudio[filesize<0.5G])",
-
+            f"bestvideo{height}{vcodec}[filesize<1.5G]+(bestaudio[language=ru][filesize<0.5G]/bestaudio[filesize<0.5G])",
+            f"bestvideo{height}[filesize<1.5G]+(bestaudio[language=ru][filesize<0.5G]/bestaudio[filesize<0.5G])",
             # Очень длинные видео
-            f"bestvideo[vcodec^=vp][height<={m}][filesize<1G]+(bestaudio[language=ru][filesize<1G]/bestaudio[filesize<1G])",
-            f"bestvideo[height<={m}][filesize<1G]+(bestaudio[language=ru][filesize<1G]/bestaudio[filesize<1G])",
-
+            f"bestvideo{height}{vcodec}[filesize<1G]+(bestaudio[language=ru][filesize<1G]/bestaudio[filesize<1G])",
+            f"bestvideo{height}[filesize<1G]+(bestaudio[language=ru][filesize<1G]/bestaudio[filesize<1G])",
             # Видео, у которых нет чётких размеров
-            f"(bestvideo[height<={m}]/bestvideo)+(bestaudio[language=ru]/bestaudio)",
-
+            f"(bestvideo{height}/bestvideo)+(bestaudio[language=ru]/bestaudio)",
             # Просто видео или просто аудио
-            f"(bestvideo[height<={m}]/bestvideo)/(bestaudio[language=ru]/bestaudio)",
-
-            "best"
+            f"(bestvideo{height}/bestvideo)/(bestaudio[language=ru]/bestaudio)",
+            "best",
         ]
 
     def _setup_formats(self) -> list | None:
         # if not is_youtube(self._url):
         #     return [None]
 
-        quality, format_ = get_quality_settings(self._chat_id), get_format_settings(self._chat_id)
-        # quality: high, medium, low, custom
-        # format: audio, video, document
-        formats = []
-        defaults = [
-            # webm , vp9 and av01 are not streamable on telegram, so we'll extract only mp4
-            "bestvideo[ext=mp4][vcodec!*=av01][vcodec!*=vp09]+bestaudio[ext=m4a]/bestvideo+bestaudio",
-            "bestvideo[vcodec^=avc]+bestaudio[acodec^=mp4a]/best[vcodec^=avc]/best",
-            None,
-        ]
-        audio = AUDIO_FORMAT or "m4a"
-        audioformats = [f"bestaudio[ext={audio}][language=ru]/bestaudio[ext={audio}]", "bestaudio[ext=m4a][language=ru]/bestaudio[ext=m4a]", "bestaudio[language=ru]/bestaudio", "best"]
-        maps = {
-            "high-audio": audioformats,
-            "high-video": self.get_format(1080),
-            "high-document": self.get_format(1080),
-            "medium-audio": audioformats,  # no mediumaudio :-(
-            "medium-video": self.get_format(720),
-            "medium-document": self.get_format(720),
-            "low-audio": audioformats,
-            "low-video": self.get_format(480),
-            "low-document": self.get_format(480),
-            "custom-audio": "",
-            "custom-video": "",
-            "custom-document": "",
+        quality, format_, vcodec = (
+            get_quality_settings(self._chat_id),
+            get_format_settings(self._chat_id),
+            get_vcodec_settings(self._chat_id),
+        )
+
+        vcodec_maps = {
+            "vcodec-auto": "",
+            "vcodec-vp9": "[vcodec^=vp]",
+            "vcodec-avc1": "[vcodec^=avc1]",
+            "vcodec-av01": "[vcodec^=av01]",
         }
 
-        if quality == "custom":
-            pass
-            # TODO not supported yet
-            # get format from ytdlp, send inlinekeyboard button to user so they can choose
-            # another callback will be triggered to download the video
-            # available_options = {
-            #     "480P": "best[height<=480]",
-            #     "720P": "best[height<=720]",
-            #     "1080P": "best[height<=1080]",
-            # }
-            # markup, temp_row = [], []
-            # for quality, data in available_options.items():
-            #     temp_row.append(types.InlineKeyboardButton(quality, callback_data=data))
-            #     if len(temp_row) == 3:  # Add a row every 3 buttons
-            #         markup.append(temp_row)
-            #         temp_row = []
-            # # Add any remaining buttons as the last row
-            # if temp_row:
-            #     markup.append(temp_row)
-            # self._bot_msg.edit_text("Choose the format", reply_markup=types.InlineKeyboardMarkup(markup))
-            # return None
+        quality_format=f"[height<={quality[:-1]}]"
+        vcodec_format=vcodec_maps.get(vcodec)
 
-        formats.extend(maps[f"{quality}-{format_}"])
+        formats = []
+
+        audio = AUDIO_FORMAT or "m4a"
+        audioformats = [f"bestaudio[ext={audio}][language=ru]/bestaudio[ext={audio}]", "bestaudio[ext=m4a][language=ru]/bestaudio[ext=m4a]", "bestaudio[language=ru]/bestaudio", "best"]
+
+        if format_ == "audio":
+            formats.extend(audioformats)
+        else:
+            formats.extend(self.get_format(quality_format, vcodec_format))
+
         return formats
 
     def _download(self, formats) -> list:

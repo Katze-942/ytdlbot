@@ -30,6 +30,7 @@ from database.model import (
     get_free_quota,
     get_paid_quota,
     get_quality_settings,
+    get_vcodec_settings,
     use_quota,
 )
 from engine.helper import debounce, sizeof_fmt
@@ -66,6 +67,7 @@ class BaseDownloader(ABC):
         self._bot_msg: Types.Message = bot_msg
         self._redis = Redis()
         self._quality = get_quality_settings(self._chat_id)
+        self._vcodec = get_vcodec_settings(self._chat_id)
         self._format = get_format_settings(self._chat_id)
 
     def __del__(self):
@@ -268,7 +270,7 @@ class BaseDownloader(ABC):
 
     def _calc_video_key(self):
         h = hashlib.md5()
-        h.update((self._url + self._quality + self._format).encode())
+        h.update((self._url + self._quality + self._format + self._vcodec).encode())
         key = h.hexdigest()
         return key
 

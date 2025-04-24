@@ -50,8 +50,14 @@ class Setting(Base):
     __tablename__ = "settings"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    quality = Column(Enum("high", "medium", "low", "audio", "custom"), nullable=False, default="high")
+    quality = Column(Enum("1440p", "1080p", "720p", "480p", "240p"), nullable=False, default="1080p")
     format = Column(Enum("video", "audio", "document"), nullable=False, default="video")
+    vcodec = Column(
+        Enum("vcodec-auto", "vcodec-vp9", "vcodec-avc1", "vcodec-av01"),
+        nullable=False,
+        default="vcodec-vp9",
+    )
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     user = relationship("User", back_populates="settings")
@@ -106,13 +112,13 @@ def session_manager():
         s.close()
 
 
-def get_quality_settings(tgid) -> Literal["high", "medium", "low", "audio", "custom"]:
+def get_quality_settings(tgid) -> Literal["1440p", "1080p", "720p", "480p", "240p"]:
     with session_manager() as session:
         user = session.query(User).filter(User.user_id == tgid).first()
         if user and user.settings:
             return user.settings.quality
 
-        return "high"
+        return "1080p"
 
 
 def get_format_settings(tgid) -> Literal["video", "audio", "document"]:
@@ -120,7 +126,19 @@ def get_format_settings(tgid) -> Literal["video", "audio", "document"]:
         user = session.query(User).filter(User.user_id == tgid).first()
         if user and user.settings:
             return user.settings.format
+
         return "video"
+
+
+def get_vcodec_settings(
+    tgid,
+) -> Literal["vcodec-auto", "vcodec-vp9", "vcodec-avc1", "vcodec-av01"]:
+    with session_manager() as session:
+        user = session.query(User).filter(User.user_id == tgid).first()
+        if user and user.settings:
+            return user.settings.vcodec
+
+        return "vcodec-vp9"
 
 
 def set_user_settings(tgid: int, key: str, value: str):

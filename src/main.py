@@ -42,12 +42,16 @@ from database.model import (
     get_free_quota,
     get_paid_quota,
     get_quality_settings,
+    get_vcodec_settings,
     init_user,
     reset_free,
     set_user_settings,
 )
 from engine import direct_entrance, youtube_entrance, special_download_entrance
 from utils import extract_url_and_name, sizeof_fmt, timeof_fmt
+
+localize_filetype=dict(document="Файл", video="Видео", audio="Аудио")
+localize_vcodec={"vcodec-auto": "АВТО", "vcodec-vp9": "VP9 (рекомендовано)", "vcodec-av01": "AV1 (самый сжатый, но требовательный)" ,"vcodec-avc1": "AVC1 (H.264)"}
 
 logging.info("Authorized users are %s", AUTHORIZED_USER)
 logging.getLogger("apscheduler.executors.default").propagate = False
@@ -304,22 +308,49 @@ def settings_handler(client: Client, message: types.Message):
     client.send_chat_action(chat_id, enums.ChatAction.TYPING)
     markup = types.InlineKeyboardMarkup(
         [
-            [  # First row
+            [
                 types.InlineKeyboardButton("Отправлять файл", callback_data="document"),
                 types.InlineKeyboardButton("Отправлять видео", callback_data="video"),
                 types.InlineKeyboardButton("Отправлять аудио", callback_data="audio"),
             ],
-            [  # second row
-                types.InlineKeyboardButton("Высокое качество", callback_data="high"),
-                types.InlineKeyboardButton("Среднее качество", callback_data="medium"),
-                types.InlineKeyboardButton("Низкое качество", callback_data="low"),
+            [
+                types.InlineKeyboardButton(
+                    "Кодек AVC1 (H.264)", callback_data="vcodec-avc1"
+                ),
+                types.InlineKeyboardButton("Кодек VP9 (рекомендуется)", callback_data="vcodec-vp9"),
+                types.InlineKeyboardButton(
+                    "Кодек АВТО", callback_data="vcodec-auto"
+                ),
+            ],
+            [
+                types.InlineKeyboardButton(
+                    "Кодек AV1 (сжатый, требовательный к ресурсам)", callback_data="vcodec-av01"
+                ),
+            ],
+            [
+                types.InlineKeyboardButton("Качество 1440p", callback_data="1440p"),
+                types.InlineKeyboardButton("Качество 1080p", callback_data="1080p"),
+                types.InlineKeyboardButton("Качество 720p", callback_data="720p"),
+            ],
+            [
+                types.InlineKeyboardButton("Качество 480p", callback_data="480p"),
+                types.InlineKeyboardButton("Качество 240p", callback_data="240p"),
             ],
         ]
     )
 
     quality = get_quality_settings(chat_id)
     send_type = get_format_settings(chat_id)
-    client.send_message(chat_id, BotText.settings.format(quality, send_type), reply_markup=markup)
+    vcodec = get_vcodec_settings(chat_id)
+
+    localize_send_type = localize_filetype.get(send_type, send_type)
+    localize_vcodec_local = localize_vcodec.get(vcodec, vcodec)
+
+    client.send_message(
+        chat_id,
+        BotText.settings.format(quality, localize_send_type, localize_vcodec_local),
+        reply_markup=markup,
+    )
 
 
 @app.on_message(filters.command(["direct"]))
@@ -421,17 +452,28 @@ def format_callback(client: Client, callback_query: types.CallbackQuery):
     chat_id = callback_query.message.chat.id
     data = callback_query.data
     logging.info("Setting %s file type to %s", chat_id, data)
-    callback_query.answer(f"Вы установили тип отправки: {callback_query.data}")
+    callback_query.answer(
+        f"Вы установили тип отправки: {localize_filetype.get(callback_query.data, callback_query.data)}"
+    )
     set_user_settings(chat_id, "format", data)
 
 
-@app.on_callback_query(filters.regex(r"high|medium|low"))
+@app.on_callback_query(filters.regex(r"1440p|1080p|720p|480p|240p"))
 def quality_callback(client: Client, callback_query: types.CallbackQuery):
     chat_id = callback_query.message.chat.id
     data = callback_query.data
     logging.info("Setting %s download quality to %s", chat_id, data)
     callback_query.answer(f"Вы установили качество видео: {callback_query.data}")
     set_user_settings(chat_id, "quality", data)
+
+
+@app.on_callback_query(filters.regex(r"vcodec-vp9|vcodec-avc1|vcodec-av01|vcodec-auto"))
+def vcodec_callback(client: Client, callback_query: types.CallbackQuery):
+    chat_id = callback_query.message.chat.id
+    data = callback_query.data
+    logging.info("Setting %s download vcodec to %s", chat_id, data)
+    callback_query.answer(f"Вы установили кодек: {localize_vcodec.get(callback_query.data, callback_query.data)}")
+    set_user_settings(chat_id, "vcodec", data)
 
 
 if __name__ == "__main__":

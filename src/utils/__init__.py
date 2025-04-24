@@ -52,7 +52,7 @@ def adjust_formats(formats):
     # medium: 720P
     # low: 480P
 
-    mapping = {"high": [], "medium": [720], "low": [480]}
+    mapping = {"max-high": [], "high": [1080], "medium": [720], "low": [480]}
     # formats.insert(0, f"bestvideo[ext=mp4][height={m}]+bestaudio[ext=m4a]")
     # formats.insert(1, f"bestvideo[vcodec^=avc][height={m}]+bestaudio[acodec^=mp4a]/best[vcodec^=avc]/best")
     #
