@@ -91,6 +91,7 @@ class YoutubeDownload(BaseDownloader):
             "skip_unavailable_fragments": True,
             "embed_metadata": True,
             "embed_thumbnail": True,
+            "playlist_items": 1 # Костыль, чтобы пользоватлеи не могли загружать видео с каналов
         }
 
         if self._url.startswith("https://drive.google.com"):
