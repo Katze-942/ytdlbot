@@ -83,7 +83,14 @@ class YoutubeDownload(BaseDownloader):
             "writethumbnail": True,
             "cookies": "firefox",
             "format": '/'.join(formats),
-            "source_address": "0.0.0.0"
+            "source_address": "0.0.0.0",
+            "concurrent_fragments": 16,
+            "buffersize": 4194304,
+            "retries": 6,
+            "fragment_retries": 6,
+            "skip_unavailable_fragments": True,
+            "embed_metadata": True,
+            "embed_thumbnail": True,
         }
 
         if self._url.startswith("https://drive.google.com"):

@@ -365,7 +365,12 @@ def direct_download(client: Client, message: types.Message):
         message.reply_text("Укажи корректную ссылку!", quote=True)
         return
     bot_msg = message.reply_text("Запрос принят, обрабатываю...", quote=True)
-    direct_entrance(client, bot_msg, url)
+    try:
+        direct_entrance(client, bot_msg, url)
+    except ValueError as e:
+        message.reply_text(e.__str__(), quote=True)
+        bot_msg.delete()
+        return
 
 
 @app.on_message(filters.command(["spdl"]))
@@ -380,7 +385,12 @@ def spdl_handler(client: Client, message: types.Message):
         message.reply_text("Произошла какая-то ошибка, проверьте URL.", quote=True)
         return
     bot_msg = message.reply_text("Запрос принят, обрабатываю....", quote=True)
-    special_download_entrance(client, bot_msg, url)
+    try:
+        special_download_entrance(client, bot_msg, url)
+    except ValueError as e:
+        message.reply_text(e.__str__(), quote=True)
+        bot_msg.delete()
+        return
 
 
 @app.on_message(filters.command(["ytdl"]) & filters.group)
@@ -396,8 +406,12 @@ def ytdl_handler(client: Client, message: types.Message):
         return
 
     bot_msg = message.reply_text("Group download request received.", quote=True)
-
-    youtube_entrance(client, bot_msg, url)
+    try:
+        youtube_entrance(client, bot_msg, url)
+    except ValueError as e:
+        message.reply_text(e.__str__(), quote=True)
+        bot_msg.delete()
+        return
 
 
 def check_link(url: str):
