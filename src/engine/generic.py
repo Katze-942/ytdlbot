@@ -9,7 +9,11 @@ from pathlib import Path
 
 import yt_dlp
 
-from config import AUDIO_FORMAT
+from config import (
+    AUDIO_FORMAT,
+    YT_DLP_PROXY,
+)
+
 from utils import is_youtube
 from database.model import get_format_settings, get_quality_settings, get_vcodec_settings
 from engine.base import BaseDownloader
@@ -91,7 +95,8 @@ class YoutubeDownload(BaseDownloader):
             "skip_unavailable_fragments": True,
             "embed_metadata": True,
             "embed_thumbnail": True,
-            "playlist_items": 1 # Костыль, чтобы пользоватлеи не могли загружать видео с каналов
+            "proxy": YT_DLP_PROXY,
+            "playlist_items": 1 # Костыль, чтобы пользователи не могли загружать видео с каналов
         }
 
         if self._url.startswith("https://drive.google.com"):
