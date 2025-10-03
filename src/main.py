@@ -434,17 +434,17 @@ def download_handler(client: Client, message: types.Message):
     logging.info("start %s", url)
 
     try:
-        if not re.findall(r"^https?://", url.lower()):
-            reply = message.reply_text("🔎 Ищу ролики на YouTube...", quote=True)
-            text = search_ytb(url)
-            client.edit_message_text(chat_id=reply.chat.id, message_id=reply.id, text=text, disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
-            return
-        else:
-            check_link(url)
-            # raise pyrogram.errors.exceptions.FloodWait(10)
-            bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...", quote=True)
-            client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
-            youtube_entrance(client, bot_msg, url)
+       # if not re.findall(r"^https?://", url.lower()):
+       #     reply = message.reply_text("🔎 Ищу ролики на YouTube...", quote=True)
+       #     text = search_ytb(url)
+       #     client.edit_message_text(chat_id=reply.chat.id, message_id=reply.id, text=text, disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
+       #     return
+       #  else:
+       check_link(url)
+       # raise pyrogram.errors.exceptions.FloodWait(10)
+       bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...", quote=True)
+       client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
+       youtube_entrance(client, bot_msg, url)
     except pyrogram.errors.Flood as e:
         f = BytesIO()
         f.write(str(e).encode())
