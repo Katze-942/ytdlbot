@@ -26,6 +26,7 @@
 - Принудительно использую IPv4. Помогло в ситуации, когда ролики перестали грузится.
 - Исправил ошибку, когда пользователь мог скинуть ссылку на канал и бот загружал все ролики с канала (костыль с `"playlist_items": 1`, надо исправить)
 - Добавлена поддержка прокси (`YT_DLP_PROXY`)
+- По умолчанию используется android_vr клиент.
 
 [![docker image](https://github.com/katze-942/ytdlbot/actions/workflows/builder.yaml/badge.svg)](https://github.com/katze-942/ytdlbot/actions/workflows/builder.yaml)
 

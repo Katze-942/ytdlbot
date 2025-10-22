@@ -442,7 +442,7 @@ def download_handler(client: Client, message: types.Message):
        #  else:
        check_link(url)
        # raise pyrogram.errors.exceptions.FloodWait(10)
-       bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...\nНаблюдаются некоторые проблемы с загрузкой из-за новых ограничений YouTube. Видео загружаются только в H.264 кодеке.", quote=True)
+       bot_msg: types.Message | Any = message.reply_text("▶️ Загружаю...\nМогут наблюдаться проблемы с AV1 кодеком.", quote=True)
        client.send_chat_action(chat_id, enums.ChatAction.UPLOAD_VIDEO)
        youtube_entrance(client, bot_msg, url)
     except pyrogram.errors.Flood as e:
