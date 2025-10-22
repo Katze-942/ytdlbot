@@ -88,6 +88,7 @@ class YoutubeDownload(BaseDownloader):
             "cookies": "firefox",
             "format": '/'.join(formats),
             "source_address": "0.0.0.0",
+            "extractor_args": {'youtube':{'player_js_version':'actual'}},
             "concurrent_fragments": 16,
             "buffersize": 4194304,
             "retries": 6,
@@ -96,7 +97,6 @@ class YoutubeDownload(BaseDownloader):
             "embed_metadata": True,
             "embed_thumbnail": True,
             "proxy": YT_DLP_PROXY,
-            "extractor_args": {'youtube':{'player_js_version':'actual'}},
             "playlist_items": 1 # Костыль, чтобы пользователи не могли загружать видео с каналов
         }
 
