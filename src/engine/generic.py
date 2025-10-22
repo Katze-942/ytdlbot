@@ -88,7 +88,7 @@ class YoutubeDownload(BaseDownloader):
             "cookies": "firefox",
             "format": '/'.join(formats),
             "source_address": "0.0.0.0",
-            "extractor_args": {'youtube': {'player-client': 'android_vr'}},
+            "extractor_args": {'youtube': {'player_client': ['android_vr']}},
             "concurrent_fragments": 16,
             "buffersize": 4194304,
             "retries": 6,
