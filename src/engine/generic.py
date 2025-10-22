@@ -88,7 +88,7 @@ class YoutubeDownload(BaseDownloader):
             "cookies": "firefox",
             "format": '/'.join(formats),
             "source_address": "0.0.0.0",
-            "extractor_args": {'youtube':{'player_js_version':'actual'}},
+            "extractor_args": {'youtube': ['player_js_version=actual']},
             "concurrent_fragments": 16,
             "buffersize": 4194304,
             "retries": 6,
@@ -138,7 +138,7 @@ class YoutubeDownload(BaseDownloader):
                 ydl_opts["cookiefile"] = "youtube-cookies.txt"
             # try add extract_args if present
             if potoken := os.getenv("POTOKEN"):
-                ydl_opts["extractor_args"] = {"youtube": ["player-client=web,default", f"po_token=web+{potoken}"]}
+                ydl_opts["extractor_args"]["youtube"].extend(["player-client=web,default", f"po_token=web+{potoken}"])
                 # for new version? https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
                 # ydl_opts["extractor_args"] = {
                 #     "youtube": [f"po_token=web.player+{potoken}", f"po_token=web.gvs+{potoken}"]
