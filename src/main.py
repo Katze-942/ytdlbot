@@ -36,7 +36,6 @@ from config import (
     OWNER,
     PROVIDER_TOKEN,
     TOKEN_PRICE,
-    UPTIME_URL,
     BotText,
 )
 from database.model import (
@@ -492,14 +491,8 @@ def vcodec_callback(client: Client, callback_query: types.CallbackQuery):
     callback_query.answer(f"Вы установили кодек: {localize_vcodec.get(callback_query.data, callback_query.data)}")
     set_user_settings(chat_id, "vcodec", data)
 
-async def uptime_push():
-    loop = asyncio.get_running_loop()
-    while True:
-        await loop.run_in_executor(None, requests.post, UPTIME_URL)
-        await asyncio.sleep(55)
 
-async def main():
-    asyncio.create_task(uptime_push())
+if __name__ == "__main__":
     botStartTime = time.time()
     scheduler = BackgroundScheduler()
     scheduler.add_job(reset_free, "cron", hour=0, minute=0)
@@ -514,9 +507,3 @@ By @BennyThink, VIP Mode: {ENABLE_VIP}
     """
     print(banner)
     app.run()
-    await asyncio.Future()
-
-
-
-if __name__ == "__main__":
-    main()
