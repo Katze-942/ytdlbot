@@ -13,6 +13,8 @@ import re
 import threading
 import time
 import typing
+import asyncio
+import requests
 from io import BytesIO
 from typing import Any
 
