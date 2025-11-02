@@ -31,6 +31,7 @@ APP_HASH = get_env("APP_HASH")
 BOT_TOKEN = get_env("BOT_TOKEN")
 OWNER = [int(i) for i in str(get_env("OWNER")).split(",")]
 YT_DLP_PROXY = get_env("YT_DLP_PROXY", "")
+UPTIME_URL = get_env("UPTIME_URL")
 
 # db settings
 AUTHORIZED_USER: str = get_env("AUTHORIZED_USER", "")
