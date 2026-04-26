@@ -497,7 +497,15 @@ def vcodec_callback(client: Client, callback_query: types.CallbackQuery):
 if __name__ == "__main__":
     # Clean up stale temp directories from previous runs
     if os.path.exists(TMPFILE_PATH):
-        shutil.rmtree(TMPFILE_PATH)
+        for item in os.listdir(TMPFILE_PATH):
+            item_path = os.path.join(TMPFILE_PATH, item)
+            try:
+                if os.path.isfile(item_path) or os.path.islink(item_path):
+                    os.unlink(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+            except Exception as e:
+                logging.error(f"Failed to remove {item_path}: {e}")
     os.makedirs(TMPFILE_PATH, exist_ok=True)
     logging.info(f"Temp directory set to {TMPFILE_PATH}")
 
