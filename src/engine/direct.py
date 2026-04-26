@@ -15,7 +15,7 @@ from uuid import uuid4
 import filetype
 import requests
 
-from config import ENABLE_ARIA2, TMPFILE_PATH
+from config import ENABLE_ARIA2
 from engine.base import BaseDownloader
 
 

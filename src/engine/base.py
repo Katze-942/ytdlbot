@@ -6,6 +6,7 @@
 import hashlib
 import json
 import logging
+import os
 import re
 import tempfile
 import uuid
@@ -22,7 +23,7 @@ import filetype
 from pyrogram import enums, types
 from tqdm import tqdm
 
-from config import TG_NORMAL_MAX_SIZE, Types
+from config import TG_NORMAL_MAX_SIZE, TMPFILE_PATH, Types
 from database import Redis
 from database.model import (
     check_quota,
@@ -63,7 +64,8 @@ class BaseDownloader(ABC):
             # if in group, we need to find out who send the message
             self._from_user = bot_msg.reply_to_message.from_user.id
         self._id = bot_msg.id
-        self._tempdir = tempfile.TemporaryDirectory(prefix="ytdl-")
+        os.makedirs(TMPFILE_PATH, exist_ok=True)
+        self._tempdir = tempfile.TemporaryDirectory(prefix="ytdl-", dir=TMPFILE_PATH)
         self._bot_msg: Types.Message = bot_msg
         self._redis = Redis()
         self._quality = get_quality_settings(self._chat_id)
@@ -337,8 +339,8 @@ class BaseDownloader(ABC):
 
     @final
     def start(self):
-        check_quota(self._from_user)
         try:
+            check_quota(self._from_user)
             if cache := self._get_video_cache():
                 logging.info("Cache hit for %s", self._url)
                 meta, file_id = json.loads(cache["meta"]), json.loads(cache["file_id"])

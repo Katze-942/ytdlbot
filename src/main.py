@@ -10,6 +10,7 @@ __author__ = "Benny <benny.think@gmail.com>"
 import logging
 import os
 import re
+import shutil
 import threading
 import time
 import typing
@@ -36,6 +37,7 @@ from config import (
     OWNER,
     PROVIDER_TOKEN,
     TOKEN_PRICE,
+    TMPFILE_PATH,
     BotText,
 )
 from database.model import (
@@ -493,6 +495,12 @@ def vcodec_callback(client: Client, callback_query: types.CallbackQuery):
 
 
 if __name__ == "__main__":
+    # Clean up stale temp directories from previous runs
+    if os.path.exists(TMPFILE_PATH):
+        shutil.rmtree(TMPFILE_PATH)
+    os.makedirs(TMPFILE_PATH, exist_ok=True)
+    logging.info(f"Temp directory set to {TMPFILE_PATH}")
+
     botStartTime = time.time()
     scheduler = BackgroundScheduler()
     scheduler.add_job(reset_free, "cron", hour=0, minute=0)

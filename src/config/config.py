@@ -57,4 +57,4 @@ CAPTION_URL_LENGTH_LIMIT = 150
 
 # This will set the value for the tmpfile path(engine path). If not, will return None and use system’s default path.
 # Please ensure that the directory exists and you have necessary permissions to write to it.
-TMPFILE_PATH = get_env("TMPFILE_PATH")
+TMPFILE_PATH = get_env("TMPFILE_PATH", "/tmp/ytdlbot")
