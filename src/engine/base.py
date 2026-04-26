@@ -338,14 +338,17 @@ class BaseDownloader(ABC):
     @final
     def start(self):
         check_quota(self._from_user)
-        if cache := self._get_video_cache():
-            logging.info("Cache hit for %s", self._url)
-            meta, file_id = json.loads(cache["meta"]), json.loads(cache["file_id"])
-            meta["cache"] = True
-            self._upload(file_id, meta)
-        else:
-            self._start()
-        self._record_usage()
+        try:
+            if cache := self._get_video_cache():
+                logging.info("Cache hit for %s", self._url)
+                meta, file_id = json.loads(cache["meta"]), json.loads(cache["file_id"])
+                meta["cache"] = True
+                self._upload(file_id, meta)
+            else:
+                self._start()
+            self._record_usage()
+        finally:
+            self._tempdir.cleanup()
 
     @abstractmethod
     def _start(self):
