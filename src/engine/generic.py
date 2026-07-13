@@ -83,24 +83,17 @@ class YoutubeDownload(BaseDownloader):
             "restrictfilenames": False,
             "quiet": True,
             "match_filter": match_filter,
-            "embedthumbnail": True,
             "writethumbnail": True,
-            "cookies": "firefox",
-            "format": '/'.join(formats),
+            "format": "/".join(formats),
             "source_address": "0.0.0.0",
             "concurrent_fragments": 16,
             "buffersize": 4194304,
             "retries": 6,
             "fragment_retries": 6,
             "skip_unavailable_fragments": True,
-            "embed_metadata": True,
-            "embed_thumbnail": True,
             "proxy": YT_DLP_PROXY,
-            "playlist_items": 1 # Костыль, чтобы пользователи не могли загружать видео с каналов
+            "playlist_items": 1,  # Костыль, чтобы пользователи не могли загружать видео с каналов
         }
-
-        if self._url.startswith("https://drive.google.com"):
-            formats = ["source"] + formats
 
         if get_format_settings(self._chat_id) == "audio":
             ydl_opts["postprocessors"] = [{
@@ -135,14 +128,14 @@ class YoutubeDownload(BaseDownloader):
                 ydl_opts["cookiesfrombrowser"] = browsers.split(",")
             if os.path.isfile("youtube-cookies.txt") and os.path.getsize("youtube-cookies.txt") > 100:
                 ydl_opts["cookiefile"] = "youtube-cookies.txt"
-            # try add extract_args if present
+            # add PO Token if present: https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
             if potoken := os.getenv("POTOKEN"):
-                ydl_opts["extractor_args"]["youtube"]["player-client"] = "web,default"
-                ydl_opts["extractor_args"]["youtube"]["po_token"] = f"=web+{potoken}"
-                # for new version? https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
-                # ydl_opts["extractor_args"] = {
-                #     "youtube": [f"po_token=web.player+{potoken}", f"po_token=web.gvs+{potoken}"]
-                # }
+                ydl_opts["extractor_args"] = {
+                    "youtube": {
+                        "player_client": ["web", "default"],
+                        "po_token": [f"web+{potoken}"],
+                    }
+                }
 
         files = None
         logging.info("yt-dlp options: %s", ydl_opts)
@@ -151,12 +144,7 @@ class YoutubeDownload(BaseDownloader):
         files = list(Path(self._tempdir.name).glob("*"))
         return files
 
-    def _start(self, formats=None):
+    def _start(self):
         # start download and upload, no cache hit
-        # user can choose format by clicking on the button(custom config)
-        default_formats = self._setup_formats()
-        if formats is not None:
-            # formats according to user choice
-            default_formats = formats + self._setup_formats()
-        self._download(default_formats)
+        self._download(self._setup_formats())
         self._upload()

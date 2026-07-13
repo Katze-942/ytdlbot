@@ -47,7 +47,7 @@ class InstagramDownload(BaseDownloader):
             resp = requests.get(f"http://instagram:15000/?url={self._url}").json()
         except Exception as e:
             self._bot_msg.edit_text(f"❌ Произошла ошибка!\n\n`{e}`")
-            pass
+            return []
 
         code = self.extract_code()
         counter = 1

@@ -4,17 +4,11 @@
 # ytdlbot - __init__.py.py
 
 
-import logging
-import pathlib
+import functools
 import re
-import shutil
-import tempfile
+import threading
 import time
-import uuid
-from http.cookiejar import MozillaCookieJar
-from urllib.parse import quote_plus, urlparse
-
-import ffmpeg
+from urllib.parse import urlparse
 
 
 def sizeof_fmt(num: int, suffix="B"):
@@ -41,63 +35,10 @@ def is_youtube(url: str) -> bool:
             return False
 
         parsed = urlparse(url)
-        return parsed.netloc.lower() in {'youtube.com', 'www.youtube.com', 'youtu.be'}
+        return parsed.netloc.lower() in {"youtube.com", "www.youtube.com", "youtu.be"}
 
     except Exception:
         return False
-
-
-def adjust_formats(formats):
-    # high: best quality 1080P, 2K, 4K, 8K
-    # medium: 720P
-    # low: 480P
-
-    mapping = {"max-high": [], "high": [1080], "medium": [720], "low": [480]}
-    # formats.insert(0, f"bestvideo[ext=mp4][height={m}]+bestaudio[ext=m4a]")
-    # formats.insert(1, f"bestvideo[vcodec^=avc][height={m}]+bestaudio[acodec^=mp4a]/best[vcodec^=avc]/best")
-    #
-    # if settings[2] == "audio":
-    #     formats.insert(0, "bestaudio[ext=m4a]")
-    #
-    # if settings[2] == "document":
-    #     formats.insert(0, None)
-
-
-def current_time(ts=None):
-    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
-
-
-def clean_tempfile():
-    patterns = ["ytdl*", "spdl*", "leech*", "direct*"]
-    temp_path = pathlib.Path(TMPFILE_PATH or tempfile.gettempdir())
-
-    for pattern in patterns:
-        for item in temp_path.glob(pattern):
-            if time.time() - item.stat().st_ctime > 3600:
-                shutil.rmtree(item, ignore_errors=True)
-
-
-def shorten_url(url, CAPTION_URL_LENGTH_LIMIT):
-    # Shortens a URL by cutting it to a specified length.
-    shortened_url = url[: CAPTION_URL_LENGTH_LIMIT - 3] + "..."
-
-    return shortened_url
-
-
-def extract_filename(response):
-    try:
-        content_disposition = response.headers.get("content-disposition")
-        if content_disposition:
-            filename = re.findall("filename=(.+)", content_disposition)[0]
-            return filename
-    except (TypeError, IndexError):
-        pass  # Handle potential exceptions during extraction
-
-    # Fallback if Content-Disposition header is missing
-    filename = response.url.rsplit("/")[-1]
-    if not filename:
-        filename = quote_plus(response.url)
-    return filename
 
 
 def extract_url_and_name(message_text):
@@ -115,3 +56,30 @@ def extract_url_and_name(message_text):
     new_name = name_match.group(1) if name_match else None
 
     return url, new_name
+
+
+def debounce(wait_seconds):
+    """
+    Thread-safe debounce decorator for methods whose instance exposes `_bot_msg`
+    (with chat.id and id attributes). The wrapped method runs only if it hasn't
+    run for the same (chat.id, msg.id) within the last `wait_seconds`.
+    """
+
+    def decorator(func):
+        last_called = {}
+        lock = threading.Lock()
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            bot_msg = args[0]._bot_msg
+            key = (bot_msg.chat.id, bot_msg.id)
+
+            with lock:
+                if key not in last_called or now - last_called[key] >= wait_seconds:
+                    last_called[key] = now
+                    return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

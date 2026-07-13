@@ -26,15 +26,11 @@ from tqdm import tqdm
 from config import TG_NORMAL_MAX_SIZE, TMPFILE_PATH, Types
 from database import Redis
 from database.model import (
-    check_quota,
     get_format_settings,
-    get_free_quota,
-    get_paid_quota,
     get_quality_settings,
     get_vcodec_settings,
-    use_quota,
 )
-from engine.helper import debounce, sizeof_fmt
+from utils import debounce, sizeof_fmt
 
 
 def generate_input_media(file_paths: list, cap: str) -> list:
@@ -74,14 +70,6 @@ class BaseDownloader(ABC):
 
     def __del__(self):
         self._tempdir.cleanup()
-
-    def _record_usage(self):
-        free, paid = get_free_quota(self._from_user), get_paid_quota(self._from_user)
-        logging.info("User %s has %s free and %s paid quota", self._from_user, free, paid)
-        if free + paid < 0:
-            raise Exception("Usage limit exceeded")
-
-        use_quota(self._from_user)
 
     @staticmethod
     def __remove_bash_color(text):
@@ -198,7 +186,10 @@ class BaseDownloader(ABC):
             return self._methods[_type](**send_args)
 
     def get_metadata(self):
-        video_path = list(Path(self._tempdir.name).glob("*"))[0]
+        files = list(Path(self._tempdir.name).glob("*"))
+        if not files:
+            return dict(height=0, width=0, duration=0, thumb=None, caption=self._url)
+        video_path = files[0]
         filename = Path(video_path).name
         width = height = duration = 0
         try:
@@ -220,18 +211,6 @@ class BaseDownloader(ABC):
 
         caption = f"{self._url}\n{filename}\n\nРазрешение: {width}x{height}\nПродолжительность: {duration} секунд"
         return dict(height=height, width=width, duration=duration, thumb=thumb, caption=caption)
-
-    # def video_convert_to_mp4(self, files):
-    #     mp4_files = [file for file in files if file.suffix != ".mp4"]
-    #
-    #     if len(mp4_files) > 0:
-    #         self._bot_msg.edit_text("🦆 Перекодировка видео, чтобы вы смогли смотреть его в Telegram. Процесс может идти до 5 минут...")
-    #
-    #     for file in mp4_files:
-    #         path = str(file.resolve())
-    #         new_path = str(file.parent) + "/" + str(file.stem) + ".mp4"
-    #         ffmpeg.input(path).output(new_path, codec="copy", movflags="+faststart").overwrite_output().run()
-    #         file.unlink()
 
     def _upload(self, files=None, meta=None):
         if files is None:
@@ -287,23 +266,13 @@ class BaseDownloader(ABC):
                     current_meta.pop("width", None)
 
                 try:
-                    success_obj = self.send_something(
+                    success = self.send_something(
                         chat_id=self._chat_id,
                         files=files,
                         _type=method,
-                        **current_meta
+                        **current_meta,
                     )
-
-                    if method == "video":
-                        success = success_obj
-                    elif method == "animation":
-                        success = success_obj
-                    elif method == "photo":
-                        success = success_obj
-                    elif method == "audio":
-                        success = success_obj
-
-                    upload_successful = True # Set flag to True on success
+                    upload_successful = True  # Set flag to True on success
                     break
                 except Exception as e:
                     logging.error("Retry to send as %s, error: %s", method, e)
@@ -340,7 +309,6 @@ class BaseDownloader(ABC):
     @final
     def start(self):
         try:
-            check_quota(self._from_user)
             if cache := self._get_video_cache():
                 logging.info("Cache hit for %s", self._url)
                 meta, file_id = json.loads(cache["meta"]), json.loads(cache["file_id"])
@@ -348,7 +316,6 @@ class BaseDownloader(ABC):
                 self._upload(file_id, meta)
             else:
                 self._start()
-            self._record_usage()
         finally:
             self._tempdir.cleanup()
 
