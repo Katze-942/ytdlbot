@@ -6,7 +6,7 @@ authors = [
     {name = "Benny", email = "benny.think@gmail.com"},
     {name = "Katze_942", email = "rs5334819@gmail.com"}
 ]
-dependencies = ["tgcrypto>=1.2.5", "yt-dlp[curl-cffi,default]>=2026.6.9", "ffmpeg-python>=0.2.0", "PyMySQL>=1.2.0", "filetype>=1.2.0", "beautifulsoup4>=4.15.0", "fakeredis>=2.36.2", "redis>=6.4.0", "requests>=2.34.2", "tqdm>=4.68.3", "python-dotenv>=1.2.2", "black>=26.5.1", "sqlalchemy>=2.0.51", "psutil>=7.2.2", "kurigram==2.2.23", "cryptography>=49.0.0", "greenlet>=3.5.2", "yt-dlp-ejs>=0.8.0"]
+dependencies = ["tgcrypto>=1.2.5", "yt-dlp[curl-cffi,default]>=2026.8.19", "ffmpeg-python>=0.2.0", "PyMySQL>=1.2.0", "filetype>=1.2.0", "beautifulsoup4>=4.15.0", "fakeredis>=2.36.2", "redis>=6.4.0", "requests>=2.34.2", "tqdm>=4.68.3", "python-dotenv>=1.2.2", "black>=26.5.1", "sqlalchemy>=2.0.51", "psutil>=7.2.2", "kurigram==2.2.23", "cryptography>=49.0.0", "greenlet>=3.5.2", "yt-dlp-ejs>=0.8.0"]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "Apache2.0"}

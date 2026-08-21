@@ -1,5 +1,5 @@
 tgcrypto>=1.2.5
-yt-dlp[curl-cffi,default]>=2026.6.9
+yt-dlp[curl-cffi,default]>=2026.7.4
 ffmpeg-python>=0.2.0
 PyMySQL>=1.2.0
 filetype>=1.2.0
