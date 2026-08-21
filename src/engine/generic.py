@@ -15,7 +15,7 @@ from config import (
 )
 
 from utils import is_youtube
-from database.model import get_format_settings, get_quality_settings, get_vcodec_settings
+from database.model import get_format_settings, get_quality_settings, get_sponsorblock_settings, get_vcodec_settings
 from engine.base import BaseDownloader
 
 
@@ -120,6 +120,20 @@ class YoutubeDownload(BaseDownloader):
             {
                 'key': 'EmbedThumbnail'
             }]
+
+        if get_sponsorblock_settings(self._chat_id) == "remove":
+            sponsorblock_pps = [
+                {
+                    'key': 'SponsorBlock',
+                    'categories': {'sponsor', 'selfpromo'},
+                    'when': 'after_filter',
+                },
+                {
+                    'key': 'ModifyChapters',
+                    'remove_sponsor_segments': {'sponsor', 'selfpromo'},
+                },
+            ]
+            ydl_opts["postprocessors"] = sponsorblock_pps + ydl_opts["postprocessors"]
 
         # setup cookies for youtube only
         if is_youtube(self._url):

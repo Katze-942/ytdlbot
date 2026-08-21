@@ -37,6 +37,7 @@ from config import (
 from database.model import (
     get_format_settings,
     get_quality_settings,
+    get_sponsorblock_settings,
     get_vcodec_settings,
     init_user,
     set_user_settings,
@@ -46,6 +47,7 @@ from utils import extract_url_and_name, sizeof_fmt, timeof_fmt
 
 localize_filetype=dict(document="Файл", video="Видео", audio="Аудио")
 localize_vcodec={"vcodec-auto": "АВТО", "vcodec-vp9": "VP9 (рекомендовано)", "vcodec-av01": "AV1 (самый сжатый, но требовательный)" ,"vcodec-avc1": "AVC1 (H.264)"}
+localize_sponsorblock = {"disabled": "Не вырезать рекламу", "remove": "Вырезать рекламу"}
 
 logging.info("Authorized users are %s", AUTHORIZED_USER)
 
@@ -224,6 +226,10 @@ def settings_handler(client: Client, message: types.Message):
                 ),
             ],
             [
+                types.InlineKeyboardButton("Не вырезать рекламу", callback_data="sponsorblock-disabled"),
+                types.InlineKeyboardButton("Вырезать рекламу", callback_data="sponsorblock-remove"),
+            ],
+            [
                 types.InlineKeyboardButton("Качество 1440p", callback_data="1440p"),
                 types.InlineKeyboardButton("Качество 1080p", callback_data="1080p"),
                 types.InlineKeyboardButton("Качество 720p", callback_data="720p"),
@@ -238,13 +244,15 @@ def settings_handler(client: Client, message: types.Message):
     quality = get_quality_settings(chat_id)
     send_type = get_format_settings(chat_id)
     vcodec = get_vcodec_settings(chat_id)
+    sponsorblock = get_sponsorblock_settings(chat_id)
 
     localize_send_type = localize_filetype.get(send_type, send_type)
     localize_vcodec_local = localize_vcodec.get(vcodec, vcodec)
+    localized_sb = localize_sponsorblock.get(sponsorblock, sponsorblock)
 
     client.send_message(
         chat_id,
-        BotText.settings.format(quality, localize_send_type, localize_vcodec_local),
+        BotText.settings.format(quality, localize_send_type, localize_vcodec_local, localized_sb),
         reply_markup=markup,
     )
 
@@ -392,6 +400,15 @@ def vcodec_callback(client: Client, callback_query: types.CallbackQuery):
     logging.info("Setting %s download vcodec to %s", chat_id, data)
     callback_query.answer(f"Вы установили кодек: {localize_vcodec.get(callback_query.data, callback_query.data)}")
     set_user_settings(chat_id, "vcodec", data)
+
+
+@app.on_callback_query(filters.regex(r"sponsorblock-disabled|sponsorblock-remove"))
+def sponsorblock_callback(client: Client, callback_query: types.CallbackQuery):
+    chat_id = callback_query.message.chat.id
+    data = callback_query.data.replace('sponsorblock-', '')
+    logging.info("Setting %s sponsorblock to %s", chat_id, data)
+    callback_query.answer(f"SponsorBlock: {localize_sponsorblock.get(data, data)}")
+    set_user_settings(chat_id, "sponsorblock", data)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ class Setting(Base):
         nullable=False,
         default="vcodec-vp9",
     )
+    sponsorblock = Column(Enum("disabled", "remove"), nullable=False, default="disabled")
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
@@ -99,6 +100,14 @@ def get_vcodec_settings(
             return user.settings.vcodec
 
         return "vcodec-vp9"
+
+
+def get_sponsorblock_settings(tgid) -> Literal["disabled", "remove"]:
+    with session_manager() as session:
+        user = session.query(User).filter(User.user_id == tgid).first()
+        if user and user.settings:
+            return user.settings.sponsorblock
+        return "disabled"
 
 
 def set_user_settings(tgid: int, key: str, value: str):
